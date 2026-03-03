@@ -1,5 +1,18 @@
 # Oilfield Production Observability
 
+![CI](https://github.com/fredericoahb/oilfield-production-observability/actions/workflows/ci.yml/badge.svg)
+![Java](https://img.shields.io/badge/Java-21-007396?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-3-C71A36?style=flat-square&logo=apachemaven&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Enabled-000000?style=flat-square&logo=opentelemetry&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-E6522C?style=flat-square&logo=prometheus&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-Dashboards-F46800?style=flat-square&logo=grafana&logoColor=white)
+![Loki](https://img.shields.io/badge/Loki-Logs-F46800?style=flat-square&logo=grafana&logoColor=white)
+![Tempo](https://img.shields.io/badge/Tempo-Traces-F46800?style=flat-square&logo=grafana&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+
 End-to-end **production telemetry observability** for oil & gas wells: ingest daily production data (oil/gas/water), compute KPIs (e.g., water cut), expose APIs, and ship **logs + metrics + traces** to a local observability stack (**Grafana + Prometheus + Loki + Tempo + OTel Collector**).
 
 This repository is designed as a **senior-level portfolio project**: clean architecture boundaries, reproducible local environment, and production-grade observability patterns.
