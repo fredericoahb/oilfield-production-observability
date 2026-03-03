@@ -16,4 +16,6 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Build & test
-        run: ./mvnw -q test
+        run: |
+          chmod +x mvnw
+          ./mvnw -q test
