@@ -1,0 +1,145 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: observability
+      POSTGRES_PASSWORD: observability
+      POSTGRES_DB: observability
+    ports:
+    - 5433:5432
+    volumes:
+    - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U observability
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    command:
+    - --config=/etc/otelcol-contrib/config.yaml
+    volumes:
+    - ./observability/otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+    - 4317:4317
+    - 4318:4318
+    depends_on:
+    - tempo
+    - loki
+  tempo:
+    image: grafana/tempo:2.5.0
+    command:
+    - -config.file=/etc/tempo.yaml
+    volumes:
+    - ./observability/tempo/tempo.yaml:/etc/tempo.yaml:ro
+    ports:
+    - 3200:3200
+    - 4319:4317
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -qO-
+      - http://localhost:3200/ready
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  loki:
+    image: grafana/loki:2.9.5
+    command:
+    - -config.file=/etc/loki/config.yaml
+    volumes:
+    - ./observability/loki/config.yaml:/etc/loki/config.yaml:ro
+    ports:
+    - 3100:3100
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+    - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+    - 9090:9090
+  grafana:
+    image: grafana/grafana:11.2.2
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+    - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+    - 3000:3000
+    depends_on:
+    - prometheus
+    - tempo
+    - loki
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: services/ingestion-service/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: observability
+      DB_USER: observability
+      DB_PASSWORD: observability
+      OTEL_SERVICE_NAME: ingestion-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=oilfield,service.version=0.1.0,deployment.environment=docker
+    ports:
+    - 8081:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    labels:
+      logging: promtail
+  kpi-service:
+    build:
+      context: .
+      dockerfile: services/kpi-service/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: observability
+      DB_USER: observability
+      DB_PASSWORD: observability
+      OTEL_SERVICE_NAME: kpi-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=oilfield,service.version=0.1.0,deployment.environment=docker
+    ports:
+    - 8082:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    labels:
+      logging: promtail
+  promtail:
+    image: grafana/promtail:2.9.5
+    command:
+    - -config.file=/etc/promtail/promtail.yaml
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - ./observability/promtail/promtail.yaml:/etc/promtail/promtail.yaml:ro
+    ports:
+    - 9080:9080
+    depends_on:
+    - loki
+volumes:
+  pgdata: null

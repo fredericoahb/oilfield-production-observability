@@ -1,0 +1,47 @@
+{
+  "uid": "data-freshness",
+  "title": "Data Freshness",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "tags": [
+    "oilfield",
+    "observability"
+  ],
+  "panels": [
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Data freshness lag per well (seconds)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "targets": [
+        {
+          "expr": "max by (well_id) (ingestion_lag_seconds)",
+          "refId": "A",
+          "legendFormat": "{{well_id}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {}
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  }
+}

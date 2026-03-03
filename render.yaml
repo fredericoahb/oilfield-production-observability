@@ -1,0 +1,112 @@
+# Render Blueprint for oilfield-production-observability
+# Deploys 2 Docker web services (ingestion-service + kpi-service).
+# You must fill secrets (DB + Grafana Cloud OTLP) in the Render Dashboard after import.
+
+services:
+  - type: web
+    name: oilfield-ingestion-service
+    runtime: docker
+    plan: free
+    rootDir: services/ingestion-service
+    dockerfilePath: Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+
+      # ---- Database (Supabase or any Postgres) ----
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+
+      # ---- Traces to Grafana Cloud OTLP ----
+      - key: OTEL_SERVICE_NAME
+        value: ingestion-service
+      - key: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: http/protobuf
+      - key: OTEL_EXPORTER_OTLP_ENDPOINT
+        sync: false
+      - key: OTEL_EXPORTER_OTLP_HEADERS
+        sync: false
+      - key: OTEL_TRACES_EXPORTER
+        value: otlp
+      - key: OTEL_METRICS_EXPORTER
+        value: none
+      - key: OTEL_LOGS_EXPORTER
+        value: none
+      - key: OTEL_RESOURCE_ATTRIBUTES
+        value: service.namespace=oilfield,service.version=0.1.0,deployment.environment=render-free
+
+      # ---- Metrics to Grafana Cloud OTLP (Micrometer OTLP registry) ----
+      # Use the HTTP OTLP metrics endpoint URL (must end with /v1/metrics)
+      - key: METRICS_OTLP_URL
+        sync: false
+      # Example value: "Basic <base64(instanceId:token)>" (no 'Authorization=' prefix)
+      - key: METRICS_OTLP_AUTHORIZATION
+        sync: false
+
+      # ---- JVM tuning for 512MB Free plan ----
+      - key: JAVA_OPTS
+        value: "-Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m"
+
+  - type: web
+    name: oilfield-kpi-service
+    runtime: docker
+    plan: free
+    rootDir: services/kpi-service
+    dockerfilePath: Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+
+      # ---- Database (same as ingestion) ----
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+
+      # ---- Traces to Grafana Cloud OTLP ----
+      - key: OTEL_SERVICE_NAME
+        value: kpi-service
+      - key: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: http/protobuf
+      - key: OTEL_EXPORTER_OTLP_ENDPOINT
+        sync: false
+      - key: OTEL_EXPORTER_OTLP_HEADERS
+        sync: false
+      - key: OTEL_TRACES_EXPORTER
+        value: otlp
+      - key: OTEL_METRICS_EXPORTER
+        value: none
+      - key: OTEL_LOGS_EXPORTER
+        value: none
+      - key: OTEL_RESOURCE_ATTRIBUTES
+        value: service.namespace=oilfield,service.version=0.1.0,deployment.environment=render-free
+
+      # ---- Metrics to Grafana Cloud OTLP ----
+      - key: METRICS_OTLP_URL
+        sync: false
+      - key: METRICS_OTLP_AUTHORIZATION
+        sync: false
+
+      # ---- JVM tuning for 512MB Free plan ----
+      - key: JAVA_OPTS
+        value: "-Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m"
